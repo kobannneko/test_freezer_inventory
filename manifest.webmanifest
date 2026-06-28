@@ -1,21 +1,10 @@
-{
-  "name": "ふりこれ",
-  "short_name": "ふりこれ",
-  "description": "夫婦で共有できる冷凍庫在庫管理アプリ",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#fff7fb",
-  "theme_color": "#f7ddea",
-  "icons": [
-    {
-      "src": "./icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "./icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
+# Changelog
+
+## v3.0
+- 画面構成を「表示」「入力」の2タブへ整理
+- 編集タブを廃止
+- 表示タブを日常操作画面に変更
+- 表示タブで数量操作（-1 / -0.25 / +0.25 / +1）できるよう変更
+- カード右上の「…」から編集・削除できるよう変更
+- 入力タブは新規登録と最近登録したものに限定
+- 既存のFirestoreデータ構造は維持
