@@ -1,202 +1,101 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>ふりこれ</title>
-  <meta name="theme-color" content="#f7ddea" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="ふりこれ" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./css/style.css?v=3.0" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>ふりこれ</title>
+<meta name="theme-color" content="#f7ddea"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="ふりこれ"/>
+<link rel="apple-touch-icon" href="./icons/icon-180.png"/>
+<link rel="manifest" href="./manifest.webmanifest"/>
+<link rel="stylesheet" href="./css/style.css?v=3.1.0"/>
+<style>
+.mode-tabs.three-tabs{width:min(540px,100%);}.three-tabs .tab{flex:1;}
+.compact-list{display:grid;gap:12px}
+.category-block{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);border-radius:24px;box-shadow:0 12px 30px rgba(163,99,130,.10);overflow:hidden}
+.category-title{padding:13px 16px;font-weight:900;color:#a64e78;background:rgba(247,221,234,.55);border-bottom:1px solid rgba(204,143,170,.20)}
+.inventory-row{width:100%;border:0;border-radius:0;background:#fff;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:13px 16px;border-bottom:1px solid rgba(204,143,170,.16);color:inherit;text-align:left}
+.inventory-row:last-child{border-bottom:0}.inventory-row:active{transform:none;background:#fff7fb}
+.row-name{font-weight:850;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-qty{font-weight:900;color:#9b5a3e;white-space:nowrap}
+.row-age{font-size:12px;font-weight:900;border-radius:999px;padding:5px 8px;white-space:nowrap;background:#eefaf7;color:#6b5060}
+.row-age.watch{background:#fff8dc;color:#b88700}.row-age.old{background:#fff0e1;color:#e88b45}.row-age.very-old{background:#fff0f1;color:#e46b78}
+.edit-empty{text-align:center;padding:30px 12px}.qty-editor{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.panel-title-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+@media(max-width:680px){.inventory-row{grid-template-columns:1fr auto auto;gap:8px;padding:13px 12px}.row-age{font-size:11px;padding:5px 7px}.row-qty{font-size:14px}.qty-editor{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.qty-editor button{font-size:12px;padding:10px 4px}}
+</style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">Freezer Inventory</p>
-        <h1>ふりこれ</h1>
-        <p class="lead">冷凍庫の「ある・使う・買わない」を、ふたりで共有。</p>
-      </div>
-      <div class="app-badge">v3.0</div>
-    </header>
-
-    <main id="mainApp" class="hidden">
-      <section class="toolbar card">
-        <div class="summary">
-          <span id="itemCount">0件</span>
-          <span id="syncStatus">同期待ち</span>
-        </div>
-        <div class="mode-tabs">
-          <button id="displayTab" class="tab active" type="button">表示</button>
-          <button id="inputTab" class="tab" type="button">入力</button>
-        </div>
-      </section>
-
-      <section id="migrationCard" class="card migration-card hidden">
-        <div>
-          <h2>ローカルデータを移行しますか？</h2>
-          <p class="muted">この端末にv1のデータが残っています。Firebaseへコピーすると共有できます。</p>
-        </div>
-        <div class="row-actions">
-          <button id="migrateBtn" class="primary" type="button">Firebaseへ移行</button>
-          <button id="dismissMigrationBtn" class="ghost" type="button">あとで</button>
-        </div>
-      </section>
-
-      <section id="displayPanel">
-        <section class="card filters">
-          <input id="displaySearch" placeholder="在庫を検索" />
-          <select id="displayCategory">
-            <option value="all">すべて</option>
-              <option>鶏肉</option>
-              <option>豚肉</option>
-              <option>牛肉</option>
-              <option>加工肉</option>
-              <option>魚介類</option>
-              <option>野菜</option>
-              <option>主食</option>
-              <option>冷凍食品</option>
-              <option>アイス</option>
-              <option>お菓子</option>
-              <option>調味料</option>
-              <option>作り置き</option>
-              <option>その他</option>
-          </select>
-          <select id="displaySort">
-            <option value="ageDesc">古い順</option>
-            <option value="ageAsc">新しい順</option>
-            <option value="category">カテゴリ順</option>
-            <option value="name">名前順</option>
-            <option value="quantityDesc">数量が多い順</option>
-            <option value="quantityAsc">数量が少ない順</option>
-          </select>
-        </section>
-
-        <section id="displayList" class="list"></section>
-      </section>
-
-      <section id="inputPanel" class="hidden">
-        <section id="formCard" class="card">
-          <h2 id="formTitle">在庫を追加</h2>
-          <form id="itemForm">
-            <input type="hidden" id="editingId" />
-            <div class="form-grid">
-              <label>品名
-                <input id="nameInput" required placeholder="例：鶏むね肉" autocomplete="off" />
-              </label>
-              <label>カテゴリ
-                <select id="categoryInput">
-              <option>鶏肉</option>
-              <option>豚肉</option>
-              <option>牛肉</option>
-              <option>加工肉</option>
-              <option>魚介類</option>
-              <option>野菜</option>
-              <option>主食</option>
-              <option>冷凍食品</option>
-              <option>アイス</option>
-              <option>お菓子</option>
-              <option>調味料</option>
-              <option>作り置き</option>
-              <option>その他</option>
-                </select>
-              </label>
-              <label>数量
-                <input id="quantityInput" type="number" min="0" step="0.25" value="1" inputmode="decimal" />
-              </label>
-              <label>単位
-                <select id="unitInput">
-                  <option>個</option>
-                  <option>袋</option>
-                  <option>パック</option>
-                  <option>食分</option>
-                  <option>本</option>
-                  <option>枚</option>
-                </select>
-              </label>
-              <label>冷凍日
-                <input id="frozenDateInput" type="date" />
-              </label>
-              <label>保管場所
-                <select id="locationInput">
-                  <option>未設定</option>
-                  <option>上段</option>
-                  <option>中段</option>
-                  <option>下段</option>
-                  <option>ドアポケット</option>
-                  <option>別冷凍庫</option>
-                </select>
-              </label>
-            </div>
-            <label>メモ
-              <textarea id="memoInput" rows="2" placeholder="例：200g単位、下味冷凍、早めに使う"></textarea>
-            </label>
-            <div class="form-actions">
-              <button class="primary" type="submit">保存</button>
-              <button id="cancelEditBtn" class="ghost hidden" type="button">編集をキャンセル</button>
-            </div>
-          </form>
-        </section>
-
-        <section class="card recent-card">
-          <div class="section-title-row">
-            <h2>最近登録したもの</h2>
-            <p class="muted mini">タップで再登録</p>
-          </div>
-          <div id="recentList" class="recent-list"></div>
-        </section>
-      </section>
-
-      <section class="card backup-card">
-        <h2>バックアップ</h2>
-        <p class="muted">Firebaseが本体ですが、念のためJSONでも控えを取れます。</p>
-        <div class="row-actions">
-          <button id="exportBtn" class="ghost" type="button">JSONエクスポート</button>
-          <label class="import-label">JSONインポート
-            <input id="importInput" type="file" accept="application/json" hidden />
-          </label>
-        </div>
-      </section>
-    </main>
-
-    <section id="authCard" class="card auth-card">
-      <div>
-        <h2>ログイン</h2>
-        <p id="authStatus" class="muted">Googleアカウントでログインすると、夫婦で同じ在庫を共有できます。</p>
-      </div>
-      <div class="auth-actions">
-        <button id="loginBtn" class="primary" type="button">Googleでログイン</button>
-        <button id="logoutBtn" class="ghost hidden" type="button">ログアウト</button>
-      </div>
-    </section>
-  </div>
-
-  <template id="displayItemTemplate">
-    <article class="item-card">
-      <div class="item-head">
-        <div>
-          <div class="item-title"></div>
-          <div class="item-meta"></div>
-        </div>
-        <button class="menu-btn" type="button">…</button>
-      </div>
-      <div class="item-middle">
-        <div class="qty-display"></div>
-        <div class="age-badge"></div>
-      </div>
-      <div class="memo-line"></div>
-      <div class="qty-control">
-        <button class="qty-btn dec-one" type="button">−1</button>
-        <button class="qty-btn dec-quarter" type="button">−0.25</button>
-        <button class="qty-btn inc-quarter" type="button">＋0.25</button>
-        <button class="qty-btn inc-one" type="button">＋1</button>
-      </div>
-    </article>
-  </template>
-
-  <script type="module" src="./js/app.js?v=3.0"></script>
+<div class="app-shell">
+<header class="hero"><div><p class="eyebrow">Freezer Inventory</p><h1>ふりこれ</h1><p class="lead">冷凍庫の「ある・使う・買わない」を、ふたりで共有。</p></div><div class="app-badge">v3.1.0</div></header>
+<main id="mainApp" class="hidden">
+<section class="toolbar card"><div class="summary"><span id="itemCount">0件</span><span id="syncStatus">同期待ち</span></div><div class="mode-tabs three-tabs"><button id="displayTab" class="tab active" type="button">表示</button><button id="editTab" class="tab" type="button">編集</button><button id="addTab" class="tab" type="button">新規追加</button></div></section>
+<section id="migrationCard" class="card migration-card hidden"><div><h2>ローカルデータを移行しますか？</h2><p class="muted">この端末にv1のデータが残っています。Firebaseへコピーすると共有できます。</p></div><div class="row-actions"><button id="migrateBtn" class="primary" type="button">Firebaseへ移行</button><button id="dismissMigrationBtn" class="ghost" type="button">あとで</button></div></section>
+<section id="displayPanel"><section class="card filters"><input id="displaySearch" placeholder="在庫を検索"/><select id="displayCategory"><option value="all">すべて</option>
+<option>鶏肉</option>
+<option>豚肉</option>
+<option>牛肉</option>
+<option>加工肉</option>
+<option>魚介類</option>
+<option>野菜</option>
+<option>主食</option>
+<option>冷凍食品</option>
+<option>アイス</option>
+<option>お菓子</option>
+<option>調味料</option>
+<option>作り置き</option>
+<option>その他</option></select><select id="displaySort"><option value="ageDesc">古い順</option><option value="ageAsc">新しい順</option><option value="category">カテゴリ順</option><option value="name">名前順</option><option value="quantityDesc">数量が多い順</option><option value="quantityAsc">数量が少ない順</option></select></section><section id="displayList" class="compact-list"></section></section>
+<section id="editPanel" class="hidden"><section id="editEmpty" class="card edit-empty"><h2>編集する在庫を選んでください</h2><p class="muted">表示タブの項目をタップすると、この画面で編集できます。</p></section><section id="editCard" class="card hidden"><div class="panel-title-row"><h2 id="editTitle">在庫を編集</h2><button id="backToDisplayBtn" class="ghost small" type="button">表示へ戻る</button></div><div class="qty-editor"><button id="editDecOne" class="ghost" type="button">−1</button><button id="editDecQuarter" class="ghost" type="button">−0.25</button><button id="editIncQuarter" class="ghost" type="button">＋0.25</button><button id="editIncOne" class="ghost" type="button">＋1</button></div><form id="editForm"><input type="hidden" id="editId"/><div class="form-grid"><label>品名<input id="editName" required autocomplete="off"/></label><label>カテゴリ<select id="editCategory"><option>鶏肉</option>
+<option>豚肉</option>
+<option>牛肉</option>
+<option>加工肉</option>
+<option>魚介類</option>
+<option>野菜</option>
+<option>主食</option>
+<option>冷凍食品</option>
+<option>アイス</option>
+<option>お菓子</option>
+<option>調味料</option>
+<option>作り置き</option>
+<option>その他</option></select></label><label>数量<input id="editQuantity" type="number" min="0" step="0.25" inputmode="decimal"/></label><label>単位<select id="editUnit"><option>個</option>
+<option>袋</option>
+<option>パック</option>
+<option>食分</option>
+<option>本</option>
+<option>枚</option></select></label><label>冷凍日<input id="editFrozenDate" type="date"/></label><label>保管場所<select id="editLocation"><option>未設定</option>
+<option>上段</option>
+<option>中段</option>
+<option>下段</option>
+<option>ドアポケット</option>
+<option>別冷凍庫</option></select></label></div><label>メモ<textarea id="editMemo" rows="2"></textarea></label><div class="form-actions"><button class="primary" type="submit">保存</button><button id="deleteEditBtn" class="danger" type="button">使い切り（削除）</button></div></form></section></section>
+<section id="addPanel" class="hidden"><section class="card"><h2>在庫を追加</h2><form id="addForm"><div class="form-grid"><label>品名<input id="addName" required placeholder="例：鶏むね肉" autocomplete="off"/></label><label>カテゴリ<select id="addCategory"><option>鶏肉</option>
+<option>豚肉</option>
+<option>牛肉</option>
+<option>加工肉</option>
+<option>魚介類</option>
+<option>野菜</option>
+<option>主食</option>
+<option>冷凍食品</option>
+<option>アイス</option>
+<option>お菓子</option>
+<option>調味料</option>
+<option>作り置き</option>
+<option>その他</option></select></label><label>数量<input id="addQuantity" type="number" min="0" step="0.25" value="1" inputmode="decimal"/></label><label>単位<select id="addUnit"><option>個</option>
+<option>袋</option>
+<option>パック</option>
+<option>食分</option>
+<option>本</option>
+<option>枚</option></select></label><label>冷凍日<input id="addFrozenDate" type="date"/></label><label>保管場所<select id="addLocation"><option>未設定</option>
+<option>上段</option>
+<option>中段</option>
+<option>下段</option>
+<option>ドアポケット</option>
+<option>別冷凍庫</option></select></label></div><label>メモ<textarea id="addMemo" rows="2" placeholder="例：200g単位、下味冷凍、早めに使う"></textarea></label><div class="form-actions"><button class="primary" type="submit">保存</button></div></form></section><section class="card recent-card"><div class="section-title-row"><h2>最近登録したもの</h2><p class="muted mini">タップで再登録</p></div><div id="recentList" class="recent-list"></div></section></section>
+<section class="card backup-card"><h2>バックアップ</h2><p class="muted">Firebaseが本体ですが、念のためJSONでも控えを取れます。</p><div class="row-actions"><button id="exportBtn" class="ghost" type="button">JSONエクスポート</button><label class="import-label">JSONインポート<input id="importInput" type="file" accept="application/json" hidden/></label></div></section>
+</main>
+<section id="authCard" class="card auth-card"><div><h2>ログイン</h2><p id="authStatus" class="muted">Googleアカウントでログインすると、夫婦で同じ在庫を共有できます。</p></div><div class="auth-actions"><button id="loginBtn" class="primary" type="button">Googleでログイン</button><button id="logoutBtn" class="ghost hidden" type="button">ログアウト</button></div></section>
+</div>
+<script type="module" src="./js/app.js?v=3.1.0"></script>
 </body>
 </html>
